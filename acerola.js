@@ -1,13 +1,14 @@
 // lifted from https://acerola.gg/colors.html
 // accompanying video: https://youtu.be/fv-wlo8yVhk?si=OXdFctDREaR1m7M9
 
+const rgaussn = () => Math.min(1, Math.abs(randomGaussian(1, 8)))
 
 function PaletteSettings (COLOR_COUNT) {
   return {
     hueBase: Math.random(),
-    hueContrast: Math.min(1, Math.abs(randomGaussian(1, 4))),
-    saturationBase: Math.min(1, Math.abs(randomGaussian(1, 4))),
-    saturationContrast: Math.random(),
+    hueContrast: rgaussn(),
+    saturationBase: rgaussn(),
+    saturationContrast: rgaussn(),
     luminanceBase: Math.random(),
     luminanceContrast: Math.random(),
     fixed: Math.random(),
@@ -48,7 +49,6 @@ function generateOKLCH(HUE_MODE, settings) {
     0.125 - chromaBase,
     settings.saturationContrast
   )
-  let chromaFixed = lerp(0.01, 0.125, settings.fixed)
 
   let lightnessBase = lerp(0.3, 0.6, settings.luminanceBase)
   let lightnessContrast = lerp(
@@ -82,7 +82,7 @@ function generateOKLCH(HUE_MODE, settings) {
     let chroma = chromaBase + linearIterator * chromaContrast
     let lightness = lightnessBase + linearIterator * lightnessContrast
 
-    if (chromaConstant) chroma = chromaFixed
+    if (chromaConstant) chroma = chromaBase
     if (lightnessConstant) lightness = lightnessFixed
 
     let lab = oklch_to_oklab(lightness, chroma, hueBase + hueOffset)

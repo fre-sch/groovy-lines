@@ -2,7 +2,8 @@ const State = {
   div: 0,
   palette: [],
   lines: [],
-  shearX: 0
+  shearX: 0,
+  hueMode: "tetradic complementary"
 }
 
 class Line {
@@ -102,7 +103,7 @@ function initState () {
   State.lines = new Array(parseInt(random(5, 13)))
   State.shearX = PI / (randomGaussian(1, 4) * 8)
   State.paletteSettings = PaletteSettings(State.lines.length + 1)
-  State.palette = generateOKLCH("triadic complementary", State.paletteSettings)
+  State.palette = generateOKLCH(State.hueMode, State.paletteSettings)
 
   for (let i = 0, n = State.lines.length; i < n; i++) {
     State.lines[i] = makeLineOps(
@@ -118,6 +119,7 @@ function initState () {
 function setup () {
   createCanvas(1024, 768)
   initState()
+  initDOM()
 }
 
 function draw () {
@@ -144,7 +146,33 @@ function draw () {
   }
 }
 
-window.addEventListener("click", (event) => {
-  initState()
-  //State.palette = generateOKLCH("triadic complementary", State.paletteSettings)
-})
+function mouseClicked (event) {
+  if (event.target == canvas) {
+    initState()
+  }
+}
+
+function initDOM () {
+  let sel = document.querySelector("#palette-mode")
+  sel.value = State.hueMode
+  sel.addEventListener("change", (event) => {
+    State.hueMode = event.target.value
+    State.palette = generateOKLCH(State.hueMode, State.paletteSettings)
+  })
+  document.querySelector("#palette-regen").addEventListener("click", () => {
+    State.paletteSettings = PaletteSettings(State.lines.length + 1)
+    State.palette = generateOKLCH(State.hueMode, State.paletteSettings)
+  })
+  let paletteSaturationBase = document.querySelector("#palette-saturation-base")
+  paletteSaturationBase.value = State.paletteSettings.saturationBase
+  paletteSaturationBase.addEventListener("input", (event) => {
+    State.paletteSettings.saturationBase = parseFloat(event.target.value)
+    State.palette = generateOKLCH(State.hueMode, State.paletteSettings)
+  })
+  let paletteHueContrast = document.querySelector("#palette-hue-contrast")
+  paletteHueContrast.value = State.paletteSettings.hueContrast
+  paletteHueContrast.addEventListener("input", (event) => {
+    State.paletteSettings.hueContrast = parseFloat(event.target.value)
+    State.palette = generateOKLCH(State.hueMode, State.paletteSettings)
+  })
+}
