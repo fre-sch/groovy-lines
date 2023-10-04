@@ -3,7 +3,15 @@ const State = {
   palette: [],
   lines: [],
   shearX: 0,
-  hueMode: "tetradic complementary"
+  hueMode: "tetradic complementary",
+  cyber: false,
+  lineHopProbability: 1.4,
+
+  regenLines () {
+    for (let line of this.lines) {
+      makeLineOps(line)
+    }
+  }
 }
 
 class Line {
@@ -11,13 +19,16 @@ class Line {
     this.color = color
     this.stroke = stroke
     this.y = y
-    this.ops = []
     this.diverge_sign = sign(randomGaussian())
-    this.diverge_probability = 1.4
+    this.reset()
     // shearX per line looks interesting
     // shearY doesn't look good at all
     // this.shearX = PI / (randomGaussian(1, 4) * 8)
     // this.shearY = PI / (randomGaussian(1, 4) * 8)
+  }
+  reset () {
+    this.ops = []
+    this.hop_probability = State.lineHopProbability
   }
   toString () {
     return `Line(${this.color}, ${this.y}, ${this.x1}, ${this.x2})`
@@ -50,7 +61,18 @@ function straightX (x, y, line, fix = null) {
   return [_x, y]
 }
 
-function divergeY (x, y, line) {
+function hop45Y (x, y, line) {
+  let r = Math.abs(rr(height))
+  let x1 = x + r
+  let y1 = y + r * line.diverge_sign
+  line.diverge_sign = -line.diverge_sign
+  line.ops.push(
+    [vertex, x1, y1]
+  )
+  return [x1, y1]
+}
+
+function hopBezierY (x, y, line) {
   // using and inverting line.diverge_sign makes the lines return to their base
   // instead of wandering off
   let r = Math.abs(rr(height))
@@ -68,13 +90,13 @@ function divergeY (x, y, line) {
   return [x2, y2]
 }
 
-function lineBezier (x, y, line) {
+function lineHopSwitch (x, y, line) {
   const r = randomGaussian()
-  if (r < -line.diverge_probability || r > line.diverge_probability) {
+  if (r < -line.hop_probability || r > line.hop_probability) {
     // increasing the probability makes the lines look less like a series of
     // stairs
-    line.diverge_probability *= (line.diverge_probability * 0.95)
-    return divergeY(x, y, line)
+    line.hop_probability *= line.hop_probability
+    return State.cyber ? hop45Y(x, y, line) : hopBezierY(x, y, line)
   }
   return straightX(x, y, line)
 }
@@ -82,11 +104,12 @@ function lineBezier (x, y, line) {
 function makeLineOps (line) {
   let x = 0
   let y = line.y
+  line.reset()
   line.ops.push(
     [vertex, x, y]
   )
   while (x < width) {
-    const [nx, ny] = lineBezier(x, y, line)
+    const [nx, ny] = lineHopSwitch(x, y, line)
     x = nx
     y = ny
   }
@@ -174,5 +197,21 @@ function initDOM () {
   paletteHueContrast.addEventListener("input", (event) => {
     State.paletteSettings.hueContrast = parseFloat(event.target.value)
     State.palette = generateOKLCH(State.hueMode, State.paletteSettings)
+  })
+  let cyberToggle = document.querySelector("#cyber-toggle")
+  cyberToggle.checked = State.cyber
+  cyberToggle.addEventListener("click", (event) => {
+    State.cyber = event.target.checked
+    State.regenLines()
+  })
+  let linesRegen = document.querySelector("#lines-regen")
+  linesRegen.addEventListener("click", () => {
+    State.regenLines()
+  })
+  let hopProbability = document.querySelector("#line-hop-probability")
+  hopProbability.value = -State.lineHopProbability
+  hopProbability.addEventListener("input", (event) => {
+    State.lineHopProbability = Math.abs(parseFloat(event.target.value))
+    State.regenLines()
   })
 }
