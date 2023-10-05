@@ -1,22 +1,6 @@
 // lifted from https://acerola.gg/colors.html
 // accompanying video: https://youtu.be/fv-wlo8yVhk?si=OXdFctDREaR1m7M9
 
-const rgaussn = () => Math.min(1, Math.abs(randomGaussian(1, 8)))
-
-function PaletteSettings (COLOR_COUNT) {
-  return {
-    hueBase: Math.random(),
-    hueContrast: rgaussn(),
-    saturationBase: rgaussn(),
-    saturationContrast: rgaussn(),
-    luminanceBase: Math.random(),
-    luminanceContrast: Math.random(),
-    fixed: Math.random(),
-    saturationConstant: true,
-    colorCount: COLOR_COUNT,
-  }
-}
-
 function oklch_to_oklab(L, c, h) {
   return [L, c * Math.cos(h), c * Math.sin(h)]
 }
@@ -37,7 +21,7 @@ function oklab_to_linear_srgb(L, a, b) {
   ]
 }
 
-function generateOKLCH(HUE_MODE, settings) {
+function generateOKLCH(settings) {
   let oklchColors = []
 
   let hueBase = settings.hueBase * 2 * Math.PI
@@ -61,7 +45,7 @@ function generateOKLCH(HUE_MODE, settings) {
   let chromaConstant = settings.saturationConstant
   let lightnessConstant = !chromaConstant
 
-  if (HUE_MODE == "monochromatic") {
+  if (settings.hueMode == "monochromatic") {
     chromaConstant = false
     lightnessConstant = false
   }
@@ -71,13 +55,13 @@ function generateOKLCH(HUE_MODE, settings) {
 
     let hueOffset = linearIterator * hueContrast * 2 * Math.PI + Math.PI / 4
 
-    if (HUE_MODE == "monochromatic") hueOffset *= 0.0
-    if (HUE_MODE == "analagous") hueOffset *= 0.25
-    if (HUE_MODE == "complementary") hueOffset *= 0.33
-    if (HUE_MODE == "triadic complementary") hueOffset *= 0.66
-    if (HUE_MODE == "tetradic complementary") hueOffset *= 0.75
+    if (settings.hueMode == "monochromatic") hueOffset *= 0.0
+    if (settings.hueMode == "analagous") hueOffset *= 0.25
+    if (settings.hueMode == "complementary") hueOffset *= 0.33
+    if (settings.hueMode == "triadic complementary") hueOffset *= 0.66
+    if (settings.hueMode == "tetradic complementary") hueOffset *= 0.75
 
-    if (HUE_MODE != "monochromatic") hueOffset += (Math.random() * 2 - 1) * 0.01
+    if (settings.hueMode != "monochromatic") hueOffset += (Math.random() * 2 - 1) * 0.01
 
     let chroma = chromaBase + linearIterator * chromaContrast
     let lightness = lightnessBase + linearIterator * lightnessContrast
