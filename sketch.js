@@ -8,6 +8,55 @@ const State = {
   blur: false,
   lineHopProbability: 1.4,
 
+  init () {
+    this.div = parseInt(random(7, 21))
+    this.lines = new Array(parseInt(random(5, 13)))
+    this.shearX = PI / (randomGaussian(1, 4) * 8)
+    this.paletteSettings = PaletteSettings(this.lines.length + 1)
+    this.palette = generateOKLCH(this.hueMode, this.paletteSettings)
+
+    for (let i = 0, n = this.lines.length; i < n; i++) {
+      this.lines[i] = makeLineOps(
+        new Line(
+          i,
+          Math.abs(randomGaussian(n * n * 4) / Math.pow(i + 1, 2)),
+          absIntMod(randomGaussian(height / 2, 90), height)
+        )
+      )
+    }
+  },
+
+  draw () {
+    push()
+    background(State.palette[0])
+    let n = State.lines.length;
+    for (let i = 0; i < n; i++) {
+      let l = State.lines[i]
+      push()
+      if (State.blur) {
+        let bf = (n * 3) / (i + 1) - 2
+        if (bf > 1) drawingContext.filter = `blur(${bf}px)`
+      }
+      noFill()
+      strokeWeight(l.stroke + 4)
+      stroke(State.palette[0])
+      beginShape()
+      for (let [op, ...args] of l.ops) {
+        op(...args)
+      }
+      endShape()
+      strokeWeight(l.stroke)
+      stroke(State.palette[l.color + 1])
+      beginShape()
+      for (let [op, ...args] of l.ops) {
+        op(...args)
+      }
+      endShape()
+      pop()
+    }
+    pop()
+  },
+
   regenLines () {
     for (let line of this.lines) {
       makeLineOps(line)
@@ -122,119 +171,19 @@ function makeLineOps (line) {
   return line
 }
 
-function initState () {
-  State.div = parseInt(random(7, 21))
-  State.lines = new Array(parseInt(random(5, 13)))
-  State.shearX = PI / (randomGaussian(1, 4) * 8)
-  State.paletteSettings = PaletteSettings(State.lines.length + 1)
-  State.palette = generateOKLCH(State.hueMode, State.paletteSettings)
-
-  for (let i = 0, n = State.lines.length; i < n; i++) {
-    State.lines[i] = makeLineOps(
-      new Line(
-        i,
-        Math.abs(randomGaussian(n * n * 4) / Math.pow(i + 1, 2)),
-        absIntMod(randomGaussian(height / 2, 90), height)
-      )
-    )
-  }
-}
-
 function setup () {
   createCanvas(1024, 768)
-  initState()
-  initDOM()
+  State.init()
   noLoop()
 }
 
 function draw () {
-  push()
-  background(State.palette[0])
-  let n = State.lines.length;
-  for (let i = 0; i < n; i++) {
-    let l = State.lines[i]
-    push()
-    if (State.blur) {
-      let bf = (n * 3) / (i + 1) - 2
-      if (bf > 1) drawingContext.filter = `blur(${bf}px)`
-    }
-    noFill()
-    strokeWeight(l.stroke + 4)
-    stroke(State.palette[0])
-    beginShape()
-    for (let [op, ...args] of l.ops) {
-      op(...args)
-    }
-    endShape()
-    strokeWeight(l.stroke)
-    stroke(State.palette[l.color + 1])
-    beginShape()
-    for (let [op, ...args] of l.ops) {
-      op(...args)
-    }
-    endShape()
-    pop()
-  }
-  pop()
+  State.draw()
 }
 
 function mouseClicked (event) {
   if (event.target == canvas) {
-    initState()
-    draw()
+    State.init()
+    State.draw()
   }
-}
-
-function initDOM () {
-  let sel = document.querySelector("#palette-mode")
-  sel.value = State.hueMode
-  sel.addEventListener("change", (event) => {
-    State.hueMode = event.target.value
-    State.palette = generateOKLCH(State.hueMode, State.paletteSettings)
-    draw()
-  })
-  document.querySelector("#palette-regen").addEventListener("click", () => {
-    State.paletteSettings = PaletteSettings(State.lines.length + 1)
-    State.palette = generateOKLCH(State.hueMode, State.paletteSettings)
-    draw()
-  })
-  let paletteSaturationBase = document.querySelector("#palette-saturation-base")
-  paletteSaturationBase.value = State.paletteSettings.saturationBase
-  paletteSaturationBase.addEventListener("input", (event) => {
-    State.paletteSettings.saturationBase = parseFloat(event.target.value)
-    State.palette = generateOKLCH(State.hueMode, State.paletteSettings)
-    draw()
-  })
-  let paletteHueContrast = document.querySelector("#palette-hue-contrast")
-  paletteHueContrast.value = State.paletteSettings.hueContrast
-  paletteHueContrast.addEventListener("input", (event) => {
-    State.paletteSettings.hueContrast = parseFloat(event.target.value)
-    State.palette = generateOKLCH(State.hueMode, State.paletteSettings)
-    draw()
-  })
-  let cyberToggle = document.querySelector("#cyber-toggle")
-  cyberToggle.checked = State.cyber
-  cyberToggle.addEventListener("click", (event) => {
-    State.cyber = event.target.checked
-    State.regenLines()
-    draw()
-  })
-  let blurToggle = document.querySelector("#blur-toggle")
-  blurToggle.checked = State.blur
-  blurToggle.addEventListener("click", (event) => {
-    State.blur = event.target.checked
-    draw()
-  })
-  let linesRegen = document.querySelector("#lines-regen")
-  linesRegen.addEventListener("click", () => {
-    State.regenLines()
-    draw()
-  })
-  let hopProbability = document.querySelector("#line-hop-probability")
-  hopProbability.value = -State.lineHopProbability
-  hopProbability.addEventListener("input", (event) => {
-    State.lineHopProbability = Math.abs(parseFloat(event.target.value))
-    State.regenLines()
-    draw()
-  })
 }
