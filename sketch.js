@@ -32,6 +32,14 @@ class PaletteSettings {
   }
 }
 
+
+class Layer {
+  constructor(id) {
+    this.id = id
+    this.elements = []
+  }
+}
+
 const State = {
   div: 0,
   palette: [],
@@ -42,9 +50,13 @@ const State = {
   cyber: false,
   blur: false,
   lineHopProbability: 1.4,
+  rotation: 0,
+  spread: 90,
 
-  init() {
-    this.div = parseInt(random(7, 21))
+  init () {
+    angleMode(DEGREES)
+    this.dim = Math.sqrt(width*width + height*height)
+    this.div = parseInt(random(13, 41))
     this.lines = new Array(parseInt(random(5, 13)))
     this.regenPalette(false)
 
@@ -53,14 +65,23 @@ const State = {
         new Line(
           i,
           Math.abs(randomGaussian(n * n * 4) / Math.pow(i + 1, 2)),
-          absIntMod(randomGaussian(height / 2, 90), height)
+          this.lineStartY()
         )
       )
     }
   },
 
+  lineStartY () {
+    return absIntMod(
+      randomGaussian(this.dim / 2, parseInt(this.spread)), this.dim
+    )
+  },
+
   draw () {
     push()
+    translate(width / 2, height / 2)
+    rotate(this.rotation)
+    translate(-this.dim/2, -this.dim/2)
     background(State.palette[0])
     let n = State.lines.length
     for (let i = 0; i < n; i++) {
@@ -69,8 +90,9 @@ const State = {
     pop()
   },
 
-  regenLines(draw=true) {
+  regenLines (draw = true) {
     for (let line of this.lines) {
+      line.y = this.lineStartY()
       makeLineOps(line)
     }
     draw && this.draw()
@@ -105,6 +127,10 @@ const State = {
     this.applyPaletteCSS()
     draw && this.draw()
   },
+
+  saveImage () {
+    saveCanvas("groovy-lines", "png")
+  }
 }
 
 class Line {
@@ -120,7 +146,7 @@ class Line {
     this.hop_probability = State.lineHopProbability
   }
   draw(State, i, n) {
-    push()
+    //push()
     if (State.blur) {
       let bf = (n * 3) / (i + 1) - 2
       if (bf > 1) drawingContext.filter = `blur(${bf}px)`
@@ -140,7 +166,7 @@ class Line {
       op(...args)
     }
     endShape()
-    pop()
+    //pop()
   }
   toString() {
     return `Line(${this.color}, ${this.y}, ${this.x1}, ${this.x2})`
@@ -163,14 +189,14 @@ function rr(max) {
 }
 
 function straightX(x, y, line, fix = null) {
-  let _x = fix == null ? x + Math.abs(rr(width)) : fix
-  _x = Math.min(_x, width)
+  let _x = fix == null ? x + Math.abs(rr(State.dim)) : fix
+  _x = Math.min(_x, State.dim)
   line.ops.push([vertex, _x, y])
   return [_x, y]
 }
 
 function hop45Y(x, y, line) {
-  let r = Math.abs(rr(height))
+  let r = Math.abs(rr(State.dim))
   let x1 = x + r
   let y1 = y + r * line.diverge_sign
   line.diverge_sign = -line.diverge_sign
@@ -181,7 +207,7 @@ function hop45Y(x, y, line) {
 function hopBezierY(x, y, line) {
   // using and inverting line.diverge_sign makes the lines return to their base
   // instead of wandering off
-  let r = Math.abs(rr(height))
+  let r = Math.abs(rr(State.dim))
   let x1 = x + r
   let y1 = y + r * line.diverge_sign
   let x2 = x1 + r
@@ -208,13 +234,13 @@ function makeLineOps(line) {
   let y = line.y
   line.reset()
   line.ops.push([vertex, x, y])
-  while (x < width) {
+  while (x < State.dim) {
     const [nx, ny] = lineHopSwitch(x, y, line)
     x = nx
     y = ny
   }
-  if (x < width) {
-    line.ops.push([vertex, width, y])
+  if (x < State.dim) {
+    line.ops.push([vertex, State.dim, y])
   }
   return line
 }

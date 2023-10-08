@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grooy Lines Generator</title>
     <script src="p5.min.js"></script>
     <script src="acerola.js"></script>
@@ -65,9 +66,11 @@
         <div class="control">
           <button type="button"
             id="lines-regen"
-            @click="State.regenLines">Lines Regen</button>
+            @click="State.regenLines">Regenerate Lines</button>
           <button id="palette-regen"
-            @click="State.regenPalette">Palette Regen</button>
+            @click="State.regenPalette">Regenerate Palette</button>
+          <button id="save-image"
+            @click="State.saveImage">Save Image</button>
         </div>
         <div class="control">
           <label for="cyber-toggle">Cyber:</label>
@@ -79,6 +82,18 @@
           <input type="checkbox" id="blur-toggle"
             v-model="State.blur"
             @change="State.draw"/>
+        </div>
+        <div class="control">
+          <label for="rotation">Rotation</label>
+          <input type="range" min="0" max="90" step="1"
+            id="rotation" v-model="State.rotation"
+            @input="State.draw" />
+        </div>
+        <div class="control">
+          <label for="spread">Spread</label>
+          <input type="range" min="0" max="400" step="5"
+            id="spread" v-model="State.spread"
+            @input="State.regenLines" />
         </div>
         <div class="control">
           <label for="palette-mode">Color mode:</label>
